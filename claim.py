@@ -73,15 +73,27 @@ def goto(page, url, retries=3):
 
 
 def accept_cookies(page):
-    """关闭官网原生 Cookie 弹窗（Accept All / Reject All）"""
-    for name in ("Accept All", "Reject All"):
+    """关闭官网 Cookie 弹窗。
+
+    不同地区/IP 下会看到两种形态：
+      - 完整表单：Accept All / Reject All / Customize
+      - 简化提示：仅 Dismiss（"How we use cookies"）
+    两者都在 #gdpr-consent-form 容器内，出现任一按钮即点击关闭。
+    """
+    form = page.locator("#gdpr-consent-form")
+    try:
+        form.wait_for(state="attached", timeout=8000)
+    except Exception:
+        return False
+
+    for name in ("Accept All", "Reject All", "Dismiss"):
         try:
-            btn = page.get_by_role("button", name=name, exact=True).first
-            if btn.is_visible():
-                btn.click(timeout=3000)
-                log(f"已关闭 Cookie 弹窗：{name}")
-                page.wait_for_timeout(800)
-                return True
+            btn = form.get_by_role("button", name=name, exact=True).first
+            btn.wait_for(state="visible", timeout=2000)
+            btn.click(timeout=3000)
+            log(f"已关闭 Cookie 弹窗：{name}")
+            page.wait_for_timeout(600)
+            return True
         except Exception:
             continue
     return False
