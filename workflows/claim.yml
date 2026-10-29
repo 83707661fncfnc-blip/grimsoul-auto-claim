@@ -1,0 +1,53 @@
+name: Grim Soul Daily Claim
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # UTC 00:00 = 北京时间 08:00
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-claim
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chromium with system deps
+        run: playwright install --with-deps chromium
+
+      - name: Run claim script
+        env:
+          GRIMSOUL_ACCOUNT_ID: ${{ secrets.GRIMSOUL_ACCOUNT_ID }}
+        run: python claim.py
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grimsoul-screenshots
+          path: screenshots/
+          retention-days: 7
