@@ -2,7 +2,7 @@ name: Grim Soul Daily Claim
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # UTC 00:00 = 北京时间 08:00
+    - cron: '6 0 * * *'   # UTC 00:06 = 北京时间 08:06，错开整点高峰
   workflow_dispatch:
 
 permissions:
@@ -42,6 +42,7 @@ jobs:
       - name: Run claim script
         env:
           GRIMSOUL_ACCOUNT_ID: ${{ secrets.GRIMSOUL_ACCOUNT_ID }}
+          TZ: Asia/Shanghai
         run: python claim.py
 
       - name: Upload screenshots
